@@ -1,20 +1,15 @@
-name: Android CI
+name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: SmartTaskManagerAndroid   # 👈 Set this once for all steps
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -26,14 +21,26 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew   # 👈 Now correct, since working-directory is set
+      - name: Find gradlew and build Debug APK
+        shell: bash
+        run: |
+          set -e
+          # find first tracked gradlew path
+          GRADLEW=$(git ls-files | grep -m1 '/gradlew$' || true)
+          if [ -z "$GRADLEW" ]; then
+            echo "::error::gradlew not found in repository. Ensure your project has the Gradle wrapper (gradlew) committed."
+            ls -la
+            exit 1
+          fi
+          DIR=$(dirname "$GRADLEW")
+          echo "Found gradlew at: $GRADLEW (working dir: $DIR)"
+          chmod +x "$DIR/gradlew"
+          pushd "$DIR"
+          ./gradlew assembleDebug --no-daemon
+          popd
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
-
-      - name: Upload APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug.apk
-          path: SmartTaskManagerAndroid/app/build/outputs/apk/debug/app-debug.apk
+          name: app-debug-apks
+          path: '*/app/build/outputs/apk/debug/.apk'
