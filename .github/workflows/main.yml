@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   build:
@@ -24,11 +23,10 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Make gradlew executable
-        run: chmod +x ./gradlew
-        working-directory: SmartTaskManagerAndroid
+        run: chmod +x SmartTaskManagerAndroid/gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: SmartTaskManagerAndroid/gradlew assembleDebug
         working-directory: SmartTaskManagerAndroid
 
       - name: Upload APK
